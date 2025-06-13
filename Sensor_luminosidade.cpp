@@ -6,7 +6,6 @@ LiquidCrystal_I2C lcd(0x27, 20, 4);
 int numero[20];
 
 #define ldr 32
-#define potenciometro 2
 
 // controle joystick
 #define JOY_X_PIN 35
@@ -26,7 +25,6 @@ byte chave[] = {B01010, B10101, B01010, B00100, B00100, B00110, B00110, B00100};
 void setup()
 {
     pinMode(ldr, INPUT);
-    pinMode(potenciometro, INPUT);
     pinMode(botaoA, INPUT_PULLUP);
     pinMode(botaoB, INPUT_PULLUP);
     pinMode(botaoC, INPUT_PULLUP);
@@ -52,10 +50,8 @@ void setup()
 
 void loop()
 {
-    static bool porta = false;
+
     int valorLDR = analogRead(ldr);
-    int valorPotenciometro = analogRead(potenciometro);
-    Serial.println(valorPotenciometro);
 
     int movimentacaox = analogRead(JOY_X_PIN);
     int movimentacaoy = analogRead(JOY_Y_PIN);
@@ -72,7 +68,7 @@ void loop()
     static int valorExagerado = -9999;
 
     // zona morta joystick
-    if (movimentacaox > 1000 && movimentacaox < 3000 && valorLDR <= 3000)
+    if (movimentacaox > 1000 && movimentacaox < 3000)
     {
         possivelAndar = true;
     }
@@ -115,52 +111,38 @@ void loop()
             lcd.setCursor(counter, 2);
             lcd.print("X");
         }
-
-        else if (counter == 14 && estadoBotaoB == true)
+    
+        else if (counter == 14 && estadoBotaoB == false)
         {
-            lcd.setCursor(3, 2);
+            lcd.setCursor(3,2);
             lcd.write((uint8_t)255);
-            porta = true;
-        }
-
-        else if (counter == 3 && valorPotenciometro > 4000 && porta == true)
-        {
-            for (int coluna = 0; coluna < 4; coluna++)
-            {
-                for (int linha = 0; linha < 20; linha++)
-                {
-                    lcd.setCursor(linha, coluna);
-                    lcd.print(" ");
-                    lcd.setCursor(2, 1);
-                    lcd.print("Proxima fase");
-                }
-            }
         }
     }
 
     delay(50); // Delay pequeno para evitar repetições rápidas
 
-    if (valorLDR > 3000)
-    {
-        lcd.noBacklight();
-        for (int linha = 0; linha < 20; linha++)
-        {
-            lcd.setCursor(linha, 3);
-            lcd.print(" ");
-            lcd.setCursor(linha, 0);
-            lcd.print(" ");
-        }
-    }
 
-    else
-    {
-        lcd.backlight();
-        for (int linha = 0; linha < 20; linha++)
-        {
-            lcd.setCursor(linha, 3);
-            lcd.write((uint8_t)255);
-            lcd.setCursor(linha, 0);
-            lcd.write((uint8_t)255);
-        }
-    }
+    // if (valorLDR > 3000)
+    // {
+    //     lcd.noBacklight();
+    //     for (int linha = 0; linha < 20; linha++)
+    //     {
+    //         lcd.setCursor(linha, 3);
+    //         lcd.print(" ");
+    //         lcd.setCursor(linha, 0);
+    //         lcd.print(" ");
+    //     }
+    // }
+
+    // else
+    // {
+    //     lcd.backlight();
+    //     for (int linha = 0; linha < 20; linha++)
+    //     {
+    //         lcd.setCursor(linha, 3);
+    //         lcd.write((uint8_t)255);
+    //         lcd.setCursor(linha, 0);
+    //         lcd.write((uint8_t)255);
+    //     }
+    // }
 }
