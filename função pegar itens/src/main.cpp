@@ -3,8 +3,8 @@
 #include <LiquidCrystal_I2C.h>
 LiquidCrystal_I2C lcd(0x27, 20, 4);
 
-#define pinBotaoEsq 23
-#define pinBotaoDir 15
+#define pinBotaoEsq 15
+#define pinBotaoDir 23
 #define pinBotaoConfirm 3
 
 static int leituraInicialBtEsq = LOW;
@@ -13,7 +13,7 @@ static int leituraInicialBtConfirm = LOW;
 
 static bool chaveMestra = false;
 static int posicao = 0;
-static int posicaoChave = 0;
+static int posicaoChave;
 
 void setup()
 {
@@ -29,7 +29,7 @@ void setup()
   lcd.setCursor(0, 2);
   lcd.print("*");
 
-  gerarChave();
+  posicaoChave = gerarChave();
 }
 
 void loop()
@@ -74,6 +74,7 @@ void loop()
 
   if (posicao == posicaoChave && (chaveMestra == false))
   {
-    pegarItem();
+    // Serial.printf("posicao: %i e posicaoChave: %i", posicao , posicaoChave);
+    chaveMestra = pegarItem(chaveMestra);
   }
 }

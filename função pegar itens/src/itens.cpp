@@ -7,9 +7,8 @@ extern LiquidCrystal_I2C lcd;
 #define pinBotaoDir 15
 #define pinBotaoConfirm 3
 
-static bool chaveMestra = false;
-static int posicaoChave = 0;
-static int posicao = 0;
+// static bool chaveMestra = false;
+static int posicaoChave;
 
 static int leituraInicialBtEsq = LOW;
 static int leituraInialBtDir = LOW;
@@ -25,24 +24,25 @@ byte chaveChar[8] = {
     B00100, B00110,
     B00110, B00100};
 
-void gerarChave()
+int gerarChave()
 {
   randomSeed(analogRead(A0));
   posicaoChave = random(0, 19);
+
+  Serial.println(posicaoChave);
 
   lcd.createChar(0, chaveChar);
 
   lcd.setCursor(posicaoChave, 2);
   lcd.print("!");
+  return posicaoChave;
 }
 
-void pegarItem()
+bool pegarItem(bool chaveMestra)
 {
-  if (posicao == posicaoChave && !chaveMestra)
-  {
-    Serial.print("voce pegou a chave seu malandrinhoo... ");
-    lcd.setCursor(posicaoChave, 2);
-    lcd.print(" ");
-    chaveMestra = true;
-  }
+  Serial.print("voce pegou a chave seu malandrinhoo... ");
+  lcd.setCursor(posicaoChave, 2);
+  lcd.print(" ");
+
+  return true;
 }

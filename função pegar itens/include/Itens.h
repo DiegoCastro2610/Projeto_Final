@@ -1,8 +1,8 @@
 #ifndef ITENS_H
 #define ITENS_H
 
-void gerarChave();
-void pegarItem();
+int gerarChave();
+bool pegarItem(bool);
 void chave();
 
 #endif
