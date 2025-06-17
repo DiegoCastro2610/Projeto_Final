@@ -1,168 +1,177 @@
 #include <Arduino.h>
 #include <LiquidCrystal_I2C.h>
 
+// === Instanciar LCD ===
 LiquidCrystal_I2C lcd(0x27, 20, 4);
 
-// === Definição dos pinos ===
+// === Definir pinos dos botões ===
 #define pinBotaoEsq 15
 #define pinBotaoDir 23
 #define pinBotaoConfirm 3
 
-// === Variáveis globais ===
+#define pinBotao1 4
+#define pinBotao2 5
+#define pinBotao3 6
+#define pinBotao4 7
+
+// === Variáveis ===
 bool cenario1 = true;
 bool cenario2 = false;
+bool puzzleResolvido = false;
 
+// Estado dos botões
 int leituraAnteriorBtEsq = HIGH;
 int leituraAnteriorBtDir = HIGH;
 
+// Controle do personagem
 int posicao = 0;
 
-// === Funções ===
+// Controle do jogo da memória
+int memoria[4] = {1, 2, 1, 2}; // 2 pares
+bool revelado[4] = {false, false, false, false};
+int primeiraEscolha = -1;
+bool jogandoMemoria = false;
+
+// === Prototipos ===
 void esquerda();
 void direita();
 void desenharCenario1();
 void mudarParaCenario1();
 void mudarParaCenario2();
 void castelo();
+void jogoDaMemoria();
+void loading();
 
-void setup()
-{
+void setup() {
   Serial.begin(9600);
 
   pinMode(pinBotaoEsq, INPUT_PULLUP);
   pinMode(pinBotaoDir, INPUT_PULLUP);
   pinMode(pinBotaoConfirm, INPUT_PULLUP);
 
+  pinMode(pinBotao1, INPUT_PULLUP);
+  pinMode(pinBotao2, INPUT_PULLUP);
+  pinMode(pinBotao3, INPUT_PULLUP);
+  pinMode(pinBotao4, INPUT_PULLUP);
+
   lcd.init();
   lcd.backlight();
 
-  // Desenha o cenário inicial
   desenharCenario1();
 
   lcd.setCursor(posicao, 2);
-  lcd.print("*"); // Personagem
+  lcd.print("*");
 }
 
-void loop()
-{
-  if (cenario1)
-  {
+void loop() {
+  if (cenario1) {
     esquerda();
     direita();
 
-    // Se o personagem estiver na porta do castelo (posição 19) e apertar direita
-    int leituraDir = digitalRead(pinBotaoDir);
-    if (posicao == 19 && leituraDir == LOW)
-    {
-      mudarParaCenario2();
+    // Travar na porta se não completou o puzzle
+    if (posicao == 19) {
+      lcd.setCursor(0, 3);
+      lcd.print("Resolva p/ entrar");
+
+      if (!puzzleResolvido) {
+        jogoDaMemoria();
+      } else {
+        int leituraConfirm = digitalRead(pinBotaoConfirm);
+        if (leituraConfirm == LOW) {
+          loading();
+          mudarParaCenario2();
+        }
+      }
     }
   }
-  
-  if (cenario2)
-  {
+
+  if (cenario2) {
     esquerda();
     direita();
     castelo();
 
+    // Voltar para o cenário 1
     int leituraEsq = digitalRead(pinBotaoEsq);
-    if (posicao == 0 && leituraEsq == LOW)
-    {
+    if (posicao == 0 && leituraEsq == LOW) {
+      loading();
       mudarParaCenario1();
     }
   }
 }
 
-// === Desenhar o cenário 1 (entrada do castelo) ===
-void desenharCenario1()
-{
+// === Cenário 1 com porta 3D ===
+void desenharCenario1() {
   lcd.clear();
 
-  // Linha superior com "nuvens" e céu
   lcd.setCursor(0, 0);
-  lcd.print(" n  u u  v  e  n ");
+  lcd.print(" n  u u  v  e  n   ██"); // Topo da porta
 
-  // Linha do castelo (muro e porta na posição 19)
   lcd.setCursor(0, 1);
-  lcd.print("==================|"); // | é a porta
+  lcd.print("================== ██"); // Parede + porta
 
-  // Linha onde o personagem anda (linha 2)
   lcd.setCursor(0, 2);
-  lcd.print("                    "); // Linha vazia para andar
+  lcd.print("                   ||"); // Porta com maçaneta
+
+  lcd.setCursor(0, 3);
+  lcd.print("                   ||"); // Porta até o chão
 }
 
-// === Função para mover para a esquerda ===
-void esquerda()
-{
+// === Movimento Esquerda ===
+void esquerda() {
   int leitura = digitalRead(pinBotaoEsq);
-  if (leituraAnteriorBtEsq != leitura)
-  {
-    if (leitura == LOW) // Pressionado
-    {
-      lcd.setCursor(posicao, 2);
-      lcd.print(" ");
-
-      posicao = (posicao == 0) ? 19 : posicao - 1;
-
-      lcd.setCursor(posicao, 2);
-      lcd.print("*");
-      Serial.println(posicao);
+  if (leituraAnteriorBtEsq != leitura) {
+    if (leitura == LOW) {
+      if (posicao > 0) {
+        lcd.setCursor(posicao, 2);
+        lcd.print(" ");
+        posicao--;
+        lcd.setCursor(posicao, 2);
+        lcd.print("*");
+        Serial.println(posicao);
+      }
     }
     leituraAnteriorBtEsq = leitura;
   }
 }
 
-// === Função para mover para a direita ===
-void direita()
-{
+// === Movimento Direita ===
+void direita() {
   int leitura = digitalRead(pinBotaoDir);
-  if (leituraAnteriorBtDir != leitura)
-  {
-    if (leitura == LOW) // Pressionado
-    {
-      lcd.setCursor(posicao, 2);
-      lcd.print(" ");
-
-      posicao = (posicao == 19) ? 0 : posicao + 1;
-
-      lcd.setCursor(posicao, 2);
-      lcd.print("*");
-      Serial.println(posicao);
+  if (leituraAnteriorBtDir != leitura) {
+    if (leitura == LOW) {
+      if (posicao < 19) {
+        lcd.setCursor(posicao, 2);
+        lcd.print(" ");
+        posicao++;
+        lcd.setCursor(posicao, 2);
+        lcd.print("*");
+        Serial.println(posicao);
+      }
     }
     leituraAnteriorBtDir = leitura;
   }
 }
 
-void mudarParaCenario1()
-{
-  lcd.clear();
+// === Voltar para Cenário 1 ===
+void mudarParaCenario1() {
   posicao = 19;
   cenario1 = true;
   cenario2 = false;
-  Serial.println("saiu no castelo!");
-
-  // Linha superior com "nuvens" e céu
-  lcd.setCursor(0, 0);
-  lcd.print(" n  u u  v  e  n ");
-
-  // Linha do castelo (muro e porta na posição 19)
-  lcd.setCursor(0, 1);
-  lcd.print("==================|"); // | é a porta
-
-  // Linha onde o personagem anda (linha 2)
-  lcd.setCursor(0, 2);
-  lcd.print("                    "); // Linha vazia para andar
+  desenharCenario1();
+  lcd.setCursor(posicao, 2);
+  lcd.print("*");
+  puzzleResolvido = false;
+  primeiraEscolha = -1;
+  for (int i = 0; i < 4; i++) revelado[i] = false;
 }
 
-// === Troca para o cenário do castelo ===
-void mudarParaCenario2()
-{
+// === Entrar no castelo ===
+void mudarParaCenario2() {
   lcd.clear();
   posicao = 0;
   cenario1 = false;
   cenario2 = true;
-  Serial.println("Entrou no castelo!");
 
-  // Desenha o castelo
   lcd.setCursor(3, 0);
   lcd.print(">>> CASTELO <<<");
 
@@ -176,17 +185,95 @@ void mudarParaCenario2()
   lcd.print("*");
 }
 
-// === Função do castelo ===
-void castelo()
-{
-  // Aqui podemos fazer a lógica de movimentação interna no castelo
-  // e depois chamar um puzzle, como jogo da memória
+// === Tela de Loading ===
+void loading() {
+  lcd.clear();
+  lcd.setCursor(5, 1);
+  lcd.print("Carregando...");
+  delay(500);
+  for (int i = 0; i < 16; i++) {
+    lcd.setCursor(i, 2);
+    lcd.print((char)255); // Bloco cheio
+    delay(100);
+  }
+  delay(500);
+}
 
-  // Exemplo de detecção de porta interna para começar puzzle
-  if (posicao == 10) // Suponha que porta está na coluna 10
-  {
-    lcd.setCursor(3, 3);
-    lcd.print("Puzzle inicia!");
-    // Aqui você pode colocar sua lógica para iniciar o jogo da memória
+// === Funcionalidade dentro do castelo ===
+void castelo() {
+  lcd.setCursor(3, 3);
+  lcd.print("Bem vindo!");
+}
+
+// === Jogo da Memória ===
+void jogoDaMemoria() {
+  jogandoMemoria = true;
+  lcd.setCursor(0, 0);
+  lcd.print(" Jogo da Memoria ");
+
+  // Mostrar estado dos pares
+  lcd.setCursor(0, 1);
+  for (int i = 0; i < 4; i++) {
+    if (revelado[i]) {
+      lcd.print(memoria[i]);
+    } else {
+      lcd.print("[ ]");
+    }
+    lcd.print(" ");
+  }
+
+  // Ler botões
+  int botoes[4] = {
+    digitalRead(pinBotao1),
+    digitalRead(pinBotao2),
+    digitalRead(pinBotao3),
+    digitalRead(pinBotao4)
+  };
+
+  for (int i = 0; i < 4; i++) {
+    if (botoes[i] == LOW) {
+      if (primeiraEscolha == -1) {
+        primeiraEscolha = i;
+      } else if (i != primeiraEscolha) {
+        lcd.setCursor(0, 2);
+        lcd.print("Escolheu ");
+        lcd.print(primeiraEscolha + 1);
+        lcd.print(" e ");
+        lcd.print(i + 1);
+        delay(1000);
+
+        if (memoria[primeiraEscolha] == memoria[i]) {
+          revelado[primeiraEscolha] = true;
+          revelado[i] = true;
+          lcd.setCursor(0, 3);
+          lcd.print("Acertou!        ");
+        } else {
+          lcd.setCursor(0, 3);
+          lcd.print("Errou!          ");
+        }
+
+        delay(1000);
+        primeiraEscolha = -1;
+      }
+    }
+  }
+
+  // Verificar se terminou
+  bool completo = true;
+  for (int i = 0; i < 4; i++) {
+    if (!revelado[i]) completo = false;
+  }
+
+  if (completo) {
+    lcd.clear();
+    lcd.setCursor(3, 1);
+    lcd.print("PUZZLE OK!");
+    delay(1500);
+    puzzleResolvido = true;
+    jogandoMemoria = false;
+    lcd.clear();
+    desenharCenario1();
+    lcd.setCursor(posicao, 2);
+    lcd.print("*");
   }
 }
