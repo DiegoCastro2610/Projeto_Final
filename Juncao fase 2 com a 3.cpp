@@ -1,4 +1,4 @@
-#include <Arduino.h>
+ #include <Arduino.h>
 #include <LiquidCrystal_I2C.h>
 #include <DHT.h>
 
@@ -18,7 +18,7 @@ static bool porta = false;
 #define JOY_Y_PIN 34
 
 // fase 3
-#define ldr 32
+ #define ldr 32
 #define potenciometro 2
 
 // Controle botoes
@@ -124,8 +124,8 @@ void piscarParedeGelo(int vezes, int intervalo)
 void trocaDeFase1();
 void trocaDeFase2();
 
-void setup()
-{
+ void setup()
+ {
     Serial.begin(9600);
 
     dht.begin();
@@ -140,7 +140,7 @@ void setup()
     pinMode(botaoE, INPUT_PULLUP);
     pinMode(botaoF, INPUT_PULLUP);
 
-    lcd.init();
+   lcd.init();
     lcd.backlight();
     // tratamento lcd fase 2
     lcd.createChar(2, topoParedeChar);
@@ -151,15 +151,19 @@ void setup()
     lcd.clear();
 
     desenharParedeGelo();
-    desenharArvore();
+    desenharArvore(); 
 }
 
-void loop()
+ void loop()
 {
+
     float temperatura = dht.readTemperature();
     float umidade = dht.readHumidity();
     int valorLDR = analogRead(ldr);
-    int valorPotenciometro = analogRead(potenciometro);
+
+   int valorPotenciometro = analogRead(potenciometro);
+  Serial.println(valorLDR);
+
 
     int movimentacaox = analogRead(JOY_X_PIN);
     int movimentacaoy = analogRead(JOY_Y_PIN);
@@ -186,7 +190,7 @@ void loop()
         Serial.println(" %");
 
         // === Lógica de desaparecimento da parede ===
-        if (temperatura > 25 && !paredeJaSumiu)
+        if (temperatura > 28 && !paredeJaSumiu)
         {
             piscarParedeGelo(2, 500);
             lcd.setCursor(13, 2);
@@ -213,7 +217,7 @@ void loop()
     else if (fase == 3)
     {
         // zona morta joystick
-        if (movimentacaox > 1000 && movimentacaox < 3000 && valorLDR <= 3000)
+        if (movimentacaox > 1000 && movimentacaox < 3000 && valorLDR >= 1500)
         {
             possivelAndar = true;
         }
@@ -277,21 +281,7 @@ void loop()
             }
         }
 
-        delay(50); // Delay pequeno para evitar repetições rápidas
-
-        if (valorLDR > 3000)
-        {
-            lcd.noBacklight();
-            for (int linha = 0; linha < 20; linha++)
-            {
-                lcd.setCursor(linha, 3);
-                lcd.print(" ");
-                lcd.setCursor(linha, 0);
-                lcd.print(" ");
-            }
-        }
-
-        else
+        if (valorLDR > 1500)
         {
             lcd.backlight();
             for (int linha = 0; linha < 20; linha++)
@@ -300,6 +290,18 @@ void loop()
                 lcd.write((uint8_t)255);
                 lcd.setCursor(linha, 0);
                 lcd.write((uint8_t)255);
+            }
+        }
+
+        else
+        {
+            lcd.noBacklight();
+            for (int linha = 0; linha < 20; linha++)
+            {
+                lcd.setCursor(linha, 3);
+                lcd.print(" ");
+                lcd.setCursor(linha, 0);
+                lcd.print(" ");
             }
         }
     }
