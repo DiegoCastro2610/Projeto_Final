@@ -143,7 +143,7 @@ void art()
     lcd.setCursor(8, 1);
     lcd.print("---");
 
-    lcd.setCursor(16, 0);
+    lcd.setCursor(15, 0);
     lcd.print("ST0/2");
 }
 
@@ -180,7 +180,7 @@ void ataqueInimigo()
             lcd.print("   ");
             stamina -= 1;
             lcdST += 1;
-            lcd.setCursor(18, 0);
+            lcd.setCursor(17, 0);
             lcd.print(lcdST);
             
 
@@ -203,7 +203,7 @@ void ataqueInimigo()
             stamina = 2;
             vidaInimiga -= 1;
             lcdST = 0;
-            lcd.setCursor(18, 0);
+            lcd.setCursor(17, 0);
             lcd.print(lcdST);
 
             tempoPassado = tempo;
@@ -220,7 +220,7 @@ void ADPersonagem()
     MQ135.update();
     bafo = MQ135.readSensor(); // le o valor atualizado pelo update
 
-    if (eixoY > 0.4 && stamina >= 0) // defende
+    if (eixoY > 0.4 && stamina > 0) // defende
     {
         AD = 1;
     }
