@@ -1,6 +1,18 @@
- #include <Arduino.h>
+#include <Arduino.h>
 #include <LiquidCrystal_I2C.h>
+#include <PubSubClient.h>
+#include <WiFi.h>
 #include <DHT.h>
+
+// Mqtt
+WiFiClient espClient;
+PubSubClient client(espClient);
+
+const char *mqtt_server = "broker.hivemq.com";
+const int mqtt_port = 1883;
+const char *mqtt_id = "esp32-senai134-projetoFinal";
+const char *mqtt_topic_sub = "senai134/grupo2/esp_inscrito";
+const char *mqtt_topic_pub = "senai134/grupo2/esp_publicando";
 
 int numero[20];
 static int fase = 2;
@@ -18,7 +30,7 @@ static bool porta = false;
 #define JOY_Y_PIN 34
 
 // fase 3
- #define ldr 32
+#define ldr 32
 #define potenciometro 2
 
 // Controle botoes
@@ -124,8 +136,12 @@ void piscarParedeGelo(int vezes, int intervalo)
 void trocaDeFase1();
 void trocaDeFase2();
 
- void setup()
- {
+// Jason
+void callback(char *, byte *, unsigned int);
+void mqttConnect(void);
+
+void setup()
+{
     Serial.begin(9600);
 
     dht.begin();
@@ -140,7 +156,7 @@ void trocaDeFase2();
     pinMode(botaoE, INPUT_PULLUP);
     pinMode(botaoF, INPUT_PULLUP);
 
-   lcd.init();
+    lcd.init();
     lcd.backlight();
     // tratamento lcd fase 2
     lcd.createChar(2, topoParedeChar);
@@ -150,20 +166,22 @@ void trocaDeFase2();
     lcd.setCursor(0, 0);
     lcd.clear();
 
+    client.setServer(mqtt_server, mqtt_port);
+    client.setCallback(callback);
+
     desenharParedeGelo();
-    desenharArvore(); 
+    desenharArvore();
 }
 
- void loop()
+void loop()
 {
 
     float temperatura = dht.readTemperature();
     float umidade = dht.readHumidity();
     int valorLDR = analogRead(ldr);
 
-   int valorPotenciometro = analogRead(potenciometro);
-  Serial.println(valorLDR);
-
+    int valorPotenciometro = analogRead(potenciometro);
+    Serial.println(valorLDR);
 
     int movimentacaox = analogRead(JOY_X_PIN);
     int movimentacaoy = analogRead(JOY_Y_PIN);
@@ -334,5 +352,40 @@ void trocaDeFase2()
         lcd.print(" ");
         lcd.setCursor(coluna, 2);
         lcd.print(" ");
+    }
+}
+
+void callback(char *topic, byte *payload, unsigned int length)
+{
+    Serial.printf("mensagem recebida em %s: ", topic);
+
+    String mensagem = "";
+    for (unsigned int i = 0; i < length; i++)
+    {
+        char c = (char)payload[i];
+        mensagem += c;
+    }
+    Serial.println(mensagem);
+}
+
+void mqttConnect()
+{
+    while (!client.connected())
+    {
+        Serial.println("Conectando ao MQTT...");
+
+        if (client.connect(mqtt_id))
+        {
+            Serial.println("Conectado com sucesso");
+            client.subscribe(mqtt_topic_sub);
+        }
+
+        else
+        {
+            Serial.print("falha, rc=");
+            Serial.println(client.state());
+            Serial.println("tentando novamente em 5 segundos");
+            delay(5000);
+        }
     }
 }
